@@ -1,0 +1,30 @@
+{
+    "files.associations": {
+        "bitset": "cpp",
+        "set": "cpp",
+        "bit": "cpp",
+        "*.tcc": "cpp",
+        "random": "cpp",
+        "functional": "cpp",
+        "istream": "cpp",
+        "limits": "cpp",
+        "ostream": "cpp",
+        "sstream": "cpp",
+        "streambuf": "cpp",
+        "tuple": "cpp",
+        "valarray": "cpp",
+        "array": "cpp",
+        "deque": "cpp",
+        "list": "cpp",
+        "string": "cpp",
+        "vector": "cpp",
+        "iterator": "cpp",
+        "string_view": "cpp",
+        "compare": "cpp",
+        "ranges": "cpp",
+        "type_traits": "cpp",
+        "utility": "cpp",
+        "optional": "cpp",
+        "system_error": "cpp"
+    }
+}

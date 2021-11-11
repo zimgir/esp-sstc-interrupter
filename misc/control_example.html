@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{font-family:Arial;color:white;background-color:#303636;}
+button{border-radius:6px;border:none;font-size:16px;cursor:pointer;0;padding:16px;color:white;}
+input[type=text],input[type=number],select{display:inline-block;width:30%;padding:6px;margin-right:16px;border:none;border-radius:4px;font-size:16px;color:white;background-color:#242929;}
+.gbtn{background-color:#006600;}
+.gbtn:hover{background-color:#009900;}
+.rbtn{background-color:#800000;}
+.rbtn:hover{background-color:#AA0000;}
+.hsplit{position:fixed;left:0;width:100%;}
+.menu{top:0;height:55px;background-color:black;}
+.menu button{display:inline-block;position:relative;top:2px;left:2px;width:128px;}
+.title{top:55px;height:55px;text-align:center;background-color:#008000;}
+.main{top:110px;left:5%;width:90%;height:70%;overflow:auto;}
+.main label{display: block; width:90%;font-size:16px;font-weight:bold;}
+.main h4{display:inline-block;width:30%;}
+.hidden{display:none;}
+.pop{width:96%;margin:16px 0;padding:16px;border-radius:6px;}
+.pop .close{float:right;font-size:24px;margin-left:16px;line-height:16px;cursor:pointer;}
+.pop .msg{font-weight:bold}
+.slider{width:30%;position:relative;top:8px;margin-right:16px;}
+.submenu{width:70%;height:55px;}
+.submenu button{position:relative;left:30%;width:196px}
+.loader{position:fixed;top:45%;left:45%;width:24px;height:24px;z-index:2;border:12px solid black;border-radius: 50%;border-top:12px solid #009900;animation:spin 0.5s linear infinite;}
+@keyframes spin{0%{transform: rotate(0deg);}100%{transform: rotate(360deg);}}
+</style>
+</head>
+<body>
+
+<div class="hsplit menu">
+<button class="gbtn" onclick="location.href='/config';">Configuration</button>
+<button class="gbtn" onclick="location.href='/control';">Control</button>
+<button class="rbtn" onclick="ajaxget('/pwmstop');">Stop</button>
+</div>
+
+<div class="hsplit title">
+<h3>Control</h3>
+</div>
+
+<div class="hsplit main" id="mdiv">
+
+<p><span id="info">Service#:&nbsp;2</span></p>
+<hr>
+
+<div class="hidden pop" id="popdiv" style="background-color:#009900">
+<span class="msg" id="poptxt"></span>
+<span class="close" onclick="this.parentElement.classList.add('hidden');">x</span>
+</div>
+
+<div class="hidden loader" id="loader"></div>
+
+<form action="/pwmstart">
+<label><h4>PWM Frequency:</h4><input type="range" class="slider" id="ifreq" min="0" max="500" step="1" name="200" value="100"><span id="ofreq"></span>&nbsp;[Hz]</label><br>
+<label><h4>PWM Width:</h4><input type="range" class="slider" id="iwidth" min="0" max="1000" step="1" name="201" value="200"><span id="owidth"></span>&nbsp;[us]</label><br>
+<label><h4>PWM Duty Cycle:</h4><input type="range" class="slider" id="iduty" min="0" max="20.00" step="0.1" name="202" value="0.00"><span id="oduty"></span>&nbsp;[%]</label><br>
+<label><h4>PWM Duration:</h4><input type="range" class="slider" id="idur" min="0" max="10.00" step="0.1" name="203" value="1.00"><span id="odur"></span>&nbsp;[s]</label><br>
+<hr>
+</form>
+<br>
+<div class="submenu">
+<button class="gbtn" id="istrt" onclick="ajaxsub(document.forms[0])">Start</button>
+</div>
+<br><br><br><br>
+
+<script>
+var ifreq=document.getElementById("ifreq");
+var ofreq=document.getElementById("ofreq");
+var iwidth=document.getElementById("iwidth");
+var owidth=document.getElementById("owidth");
+var iduty=document.getElementById("iduty");
+var oduty=document.getElementById("oduty");
+var idur=document.getElementById("idur");
+var odur=document.getElementById("odur");
+var istrt=document.getElementById("istrt");
+function updt() {
+	ofreq.innerHTML=ifreq.value;
+	owidth.innerHTML=iwidth.value;
+	oduty.innerHTML=iduty.value;
+	odur.innerHTML=idur.value;
+
+	if(ifreq.value != 0 || iwidth.value != iwidth.max) {
+		istrt.innerHTML="Start PWM"
+		istrt.classList.remove("rbtn"); istrt.classList.add("gbtn");
+	} else {
+		istrt.innerHTML="Start CW"
+		istrt.classList.remove("gbtn"); istrt.classList.add("rbtn");
+	}
+}
+
+	function cpd() {
+	let cp = 1000000 / ifreq.value;
+	let cd = 100 * iwidth.value / cp;
+	return {p:cp,d:cd};
+}
+
+function sduty() {
+	if(ifreq.value == 0) {
+		iduty.value = 0;
+		return;
+	}
+	let pd = cpd();
+	if (pd.d <= iduty.max) {
+		iduty.value = pd.d;
+		return;
+	}
+	let fw = iduty.max * pd.p / 100;
+	if(fw <= iwidth.max) {
+		iduty.value = iduty.max;
+		iwidth.value = fw;
+	} else {
+		iwidth.value = iwidth.max;
+		iduty.value = 100 * iwidth.max / pd.p;
+	}
+}
+
+ifreq.oninput=function() {
+	sduty();
+	if(ifreq.value == 0)
+		iwidth.value = 0;
+	updt();
+}
+
+iwidth.oninput=function() {
+	sduty();
+	updt();
+}
+
+iduty.oninput=function() {
+	if(ifreq.value == 0) {
+		iduty.value = 0;
+	} else {
+		let pd = cpd();
+		fw = iduty.value * pd.p / 100;
+		if(fw <= iwidth.max) {
+			iwidth.value = fw;
+		} else {
+			iwidth.value = iwidth.max;
+			iduty.value = 100 * iwidth.max / pd.p;
+		}
+	}
+	updt();
+}
+
+idur.oninput=function() {
+	updt();
+}
+
+sduty();
+updt();
+
+</script>
+
+</div>
+
+<script>
+var loader=document.getElementById("loader");
+var popdiv=document.getElementById("popdiv");
+var poptxt=document.getElementById("poptxt");
+var mdiv=document.getElementById("mdiv");
+var info=document.getElementById("info");
+function mtop(){mdiv.scrollTo({top: 0, behavior: 'smooth'});}
+function btnsdis(dis){let btns=document.getElementsByTagName("button"); for(var i = 0; i < btns.length; i++) btns[i].disabled=dis;}
+function setvis(cls,vis){if(vis) cls.classList.remove("hidden"); else cls.classList.add("hidden");}
+function setpop(msg,color){poptxt.innerHTML=msg;popdiv.style.background=color;setvis(popdiv,true);}
+function setinfo(txt){info.innerHTML=txt;}
+function formstr(form){let data = new FormData(form); let url = new URLSearchParams(data); return url.toString();}
+function jsonres(txt){var res; try{res = JSON.parse(txt);}catch(e){setpop('Failed to parse response!','#AA0000');setinfo(txt); return null;} return res;}
+function ajaxnew(){var xhr = new XMLHttpRequest(); xhr.timeout=10000; xhr.onreadystatechange=ajaxrdy; xhr.ontimeout=ajaxto; return xhr;}
+function ajaxstr(){mtop(); btnsdis(true); setvis(loader,true); setinfo(''); setvis(popdiv,false);}
+function ajaxend(){mtop(); btnsdis(false); setvis(loader,false);}
+function ajaxres(txt){let res = jsonres(txt); if(!res) return; setinfo('Service#:&nbsp;' + res.svn); setpop(res.msg,res.clr);}
+function ajaxerr(err){setpop('Request failed! Status: ' + err + ' Try reloading the page','#AA0000');}
+function ajaxto(){setpop('Request timeout!','#AA0000'); ajaxend();}
+function ajaxrdy(){if(this.readyState != 4) return; if(this.status == 200) ajaxres(this.responseText); else ajaxerr(this.status); ajaxend();}
+function ajaxget(ref){ajaxstr(); var xhr = ajaxnew(); xhr.open('get',ref); xhr.send();}
+function ajaxsub(form){ajaxstr(); var xhr = ajaxnew(); xhr.open('post',form.action); xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded'); xhr.send(formstr(form));}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{font-family:Arial;color:white;background-color:#303636;}
+button{border-radius:6px;border:none;font-size:16px;cursor:pointer;0;padding:16px;color:white;}
+input[type=text],input[type=number],select{display:inline-block;width:30%;padding:6px;margin-right:16px;border:none;border-radius:4px;font-size:16px;color:white;background-color:#242929;}
+.gbtn{background-color:#006600;}
+.gbtn:hover{background-color:#009900;}
+.rbtn{background-color:#800000;}
+.rbtn:hover{background-color:#AA0000;}
+.hsplit{position:fixed;left:0;width:100%;}
+.menu{top:0;height:55px;background-color:black;}
+.menu button{display:inline-block;position:relative;top:2px;left:2px;width:128px;}
+.title{top:55px;height:55px;text-align:center;background-color:#008000;}
+.main{top:110px;left:5%;width:90%;height:70%;overflow:auto;}
+.main label{display: block; width:90%;font-size:16px;font-weight:bold;}
+.main h4{display:inline-block;width:30%;}
+.hidden{display:none;}
+.pop{width:96%;margin:16px 0;padding:16px;border-radius:6px;}
+.pop .close{float:right;font-size:24px;margin-left:16px;line-height:16px;cursor:pointer;}
+.pop .msg{font-weight:bold}
+.slider{width:30%;position:relative;top:8px;margin-right:16px;}
+.submenu{width:70%;height:55px;}
+.submenu button{position:relative;left:30%;width:196px}
+.loader{position:fixed;top:45%;left:45%;width:24px;height:24px;z-index:2;border:12px solid black;border-radius: 50%;border-top:12px solid #009900;animation:spin 0.5s linear infinite;}
+@keyframes spin{0%{transform: rotate(0deg);}100%{transform: rotate(360deg);}}
+</style>
+</head>
+<body>
+
+<div class="hsplit menu">
+<button class="gbtn" onclick="location.href='/config';">Configuration</button>
+<button class="gbtn" onclick="location.href='/control';">Control</button>
+<button class="rbtn" onclick="ajaxget('/pwmstop');">Stop</button>
+</div>
+
+<div class="hsplit title">
+<h3>Configuration</h3>
+</div>
+
+<div class="hsplit main" id="mdiv">
+
+<p><span id="info">Service#:&nbsp;1</span></p>
+<hr>
+
+<div class="hidden pop" id="popdiv" style="background-color:#009900">
+<span class="msg" id="poptxt"></span>
+<span class="close" onclick="this.parentElement.classList.add('hidden');">x</span>
+</div>
+
+<div class="hidden loader" id="loader"></div>
+
+<h3>Network:</h3>
+<hr>
+<form method="post" action="/setcfg">
+<label><h4>Network Name:</h4><input type="text" maxlength="64" name="100" value="Meow" ></label><br>
+<label><h4>Network Password:</h4><input type="text" maxlength="64" name="101" value="cafe147963" ></label><br>
+<label><h4>Access Point Name:</h4><input type="text" maxlength="64" name="102" value="esptc" ></label><br>
+<label><h4>Access Point Password:</h4><input type="text" maxlength="64" name="103" value="meowmeow" ></label><br>
+<label><h4>Authentication User:</h4><input type="text" maxlength="64" name="104" value="zimgir" ></label><br>
+<label><h4>Authentication Password:</h4><input type="text" maxlength="64" name="105" value="meowmeow" ></label><br>
+<label><h4>mDNS Name:</h4><input type="text" maxlength="64" name="106" value="esptc" ></label><br>
+<label><h4>Static IP:</h4><input type="text" maxlength="15" name="107" value="10.0.0.82" ></label><br>
+<label><h4>Subnet Mask:</h4><input type="text" maxlength="15" name="108" value="255.255.255.0" ></label><br>
+<label><h4>Default Gateway IP:</h4><input type="text" maxlength="15" name="109" value="10.0.0.138" ></label><br>
+<label><h4>DNS IP:</h4><input type="text" maxlength="15" name="110" value="10.0.0.138" ></label><br>
+<label><h4>Access Point Server IP:</h4><input type="text" maxlength="15" name="110" value="192.168.4.1" disabled></label><br>
+<hr>
+<h3>Interrupter:</h3>
+<hr>
+<label><h4>Max PWM frequency:</h4><input type="number" oninput="this.value=Math.round(this.value)" min="100" max="1000" name="111" value="500">&nbsp;[Hz]</label><br>
+<label><h4>Max PWM width:</h4><input type="number" oninput="this.value=Math.round(this.value)" min="1" max="10000" name="112" value="1000">&nbsp;[us]</label><br>
+<label><h4>Max PWM duty cycle:</h4><input type="number" oninput="" min="1" max="100" name="113" value="20.00">&nbsp;[%]</label><br>
+<label><h4>Max PWM duration:</h4><input type="number" oninput="this.value=Math.round(this.value)" min="1000" max="3600000" name="114" value="10000">&nbsp;[ms]</label><br>
+<hr>
+</form>
+<br>
+<div class="submenu">
+<button class="gbtn" onclick="ajaxsub(document.forms[0])">Save Configuration</button>
+</div>
+<br><br><br><br>
+
+</div>
+
+<script>
+var loader=document.getElementById("loader");
+var popdiv=document.getElementById("popdiv");
+var poptxt=document.getElementById("poptxt");
+var mdiv=document.getElementById("mdiv");
+var info=document.getElementById("info");
+function mtop(){mdiv.scrollTo({top: 0, behavior: 'smooth'});}
+function btnsdis(dis){let btns=document.getElementsByTagName("button"); for(var i = 0; i < btns.length; i++) btns[i].disabled=dis;}
+function setvis(cls,vis){if(vis) cls.classList.remove("hidden"); else cls.classList.add("hidden");}
+function setpop(msg,color){poptxt.innerHTML=msg;popdiv.style.background=color;setvis(popdiv,true);}
+function setinfo(txt){info.innerHTML=txt;}
+function formstr(form){let data = new FormData(form); let url = new URLSearchParams(data); return url.toString();}
+function jsonres(txt){var res; try{res = JSON.parse(txt);}catch(e){setpop('Failed to parse response!','#AA0000');setinfo(txt); return null;} return res;}
+function ajaxnew(){var xhr = new XMLHttpRequest(); xhr.timeout=10000; xhr.onreadystatechange=ajaxrdy; xhr.ontimeout=ajaxto; return xhr;}
+function ajaxstr(){mtop(); btnsdis(true); setvis(loader,true); setinfo(''); setvis(popdiv,false);}
+function ajaxend(){mtop(); btnsdis(false); setvis(loader,false);}
+function ajaxres(txt){let res = jsonres(txt); if(!res) return; setinfo('Service#:&nbsp;' + res.svn); setpop(res.msg,res.clr);}
+function ajaxerr(err){setpop('Request failed! Status: ' + err + ' Try reloading the page','#AA0000');}
+function ajaxto(){setpop('Request timeout!','#AA0000'); ajaxend();}
+function ajaxrdy(){if(this.readyState != 4) return; if(this.status == 200) ajaxres(this.responseText); else ajaxerr(this.status); ajaxend();}
+function ajaxget(ref){ajaxstr(); var xhr = ajaxnew(); xhr.open('get',ref); xhr.send();}
+function ajaxsub(form){ajaxstr(); var xhr = ajaxnew(); xhr.open('post',form.action); xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded'); xhr.send(formstr(form));}
+</script>
+
+</body>
+</html>
