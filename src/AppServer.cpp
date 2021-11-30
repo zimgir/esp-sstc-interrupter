@@ -91,8 +91,8 @@ void AppServer::_server_loop()
         if (_setup_ap() && _setup_server())
         {
             // default AP IP is 192.168.4.1
-            LOGI("AP Server started at:\n\nhttps://%s:443\n\nhttps://%s.local",
-                 WiFi.localIP().toString().c_str(), _config.mdns_name().c_str());
+            LOGI("AP Server started at:\n\nhttps://192.168.4.1:443\n\nhttps://%s.local",
+                 _config.mdns_name().c_str());
             _server_state = STATE_HANDLE;
         }
 
@@ -125,7 +125,7 @@ bool AppServer::_setup_net()
         LOGD(".");
         count++;
 
-        if (count > 32)
+        if (count > NET_CONNECT_TIMEOUT * 2)
         {
             LOGE("Connection failed!");
             return false;
@@ -284,7 +284,7 @@ void AppServer::_handle_set_config()
         key = _global_instance->_server.argName(i);
         val = _global_instance->_server.arg(i);
 
-        if(key.compareTo("plain") == 0)
+        if (key.compareTo("plain") == 0)
             continue; // skip full url arg in POST url encoded data
 
         ret = _global_instance->_config.set(key, val, res);
@@ -338,7 +338,7 @@ void AppServer::_handle_pwm_start()
         key = _global_instance->_server.argName(i);
         val = _global_instance->_server.arg(i);
 
-        if(key.compareTo("plain") == 0)
+        if (key.compareTo("plain") == 0)
             continue; // skip full url arg in POST url encoded data
 
         ret = _global_instance->_control.set(key, val, res);

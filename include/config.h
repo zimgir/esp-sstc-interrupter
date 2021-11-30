@@ -20,4 +20,6 @@
 
 #define MAX_CONTENT_SIZE 1460 // TCP buffer limit
 
+#define NET_CONNECT_TIMEOUT 10
+
 #endif
